@@ -8,38 +8,26 @@ class Track
     segments.each do |segment|
       segment_objects.append(segment)
     end
-    # set segments to segment_objects
+
     @segments = segment_objects
   end
 
-  def get_track_json()
+  def get_json()
     json = '{"type": "Feature", '
+
     if @name != nil
       json += '"properties": {"title": "' + @name + '"},'
     end
+
     json += '"geometry": {"type": "MultiLineString","coordinates": ['
-    # Loop through all the segment objects
+
     @segments.each_with_index do |segment, index|
+
       if index > 0
         json += ","
       end
-      json += '['
-      # Loop through all the coordinates in the segment
-      tsj = ''
-      segment.coordinates.each do |c|
-        if tsj != ''
-          tsj += ','
-        end
-        # Add the coordinate
-        tsj += '['
-        tsj += "#{c.lon},#{c.lat}"
-        if c.ele != nil
-          tsj += ",#{c.ele}"
-        end
-        tsj += ']'
-      end
-      json += tsj
-      json += ']'
+
+      json += '[' + segment.get_json + ']'
     end
     json + ']}}'
   end
@@ -52,6 +40,28 @@ class TrackSegment
 
   def initialize(coordinates)
     @coordinates = coordinates
+  end
+
+  def get_json()
+    json = ''
+    coordinates.each do |coordinate|
+
+      if json != ''
+        json += ','
+      end
+
+      json += '['
+      json += "#{coordinate.lon},#{coordinate.lat}"
+
+      if coordinate.ele != nil
+        json += ",#{coordinate.ele}"
+      end
+
+      json += ']'
+    end
+
+    return json
+
   end
 
 end
@@ -80,10 +90,8 @@ class Waypoint
     @type = type
   end
 
-  def get_waypoint_json(indent=0)
-    json = '{"type": "Feature",'
-    # if name is not nil or type is not nil
-    json += '"geometry": {"type": "Point","coordinates": '
+  def get_json(indent=0)
+    json = '{"type": "Feature","geometry": {"type": "Point","coordinates": '
     json += "[#{@lon},#{@lat}"
 
     if ele != nil
@@ -94,14 +102,18 @@ class Waypoint
 
     if name != nil or type != nil
       json += '"properties": {'
+
       if name != nil
         json += '"title": "' + @name + '"'
       end
-      if type != nil  # if type is not nil
+
+      if type != nil 
+
         if name != nil
           json += ','
         end
-        json += '"icon": "' + @type + '"'  # type is the icon
+
+        json += '"icon": "' + @type + '"' 
       end
       json += '}'
     end
@@ -122,18 +134,15 @@ class World
   end
 
   def to_geojson(indent=0)
-    # Write stuff
     gjson = '{"type": "FeatureCollection","features": ['
     @features.each_with_index do |feature, index|
+
       if index != 0
         gjson +=","
       end
 
-      if feature.class == Track
-          gjson += feature.get_track_json
-      elsif feature.class == Waypoint
-          gjson += feature.get_waypoint_json
-      end
+      gjson += feature.get_json
+
     end
     gjson + "]}"
   end
